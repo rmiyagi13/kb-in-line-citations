@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages (DISABLED - Using gh-pages branch method)
+
+# This workflow is disabled in favor of the traditional gh-pages branch deployment
+# Use the deploy-pages.sh script instead
+
+on:
+  # push:
+  #   branches: [ main ]
+  workflow_dispatch: # Allow manual trigger only
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: false # Disable this workflow
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application (without API keys for security)
+      env:
+        REACT_APP_ENVIRONMENT: production
+        REACT_APP_DEFAULT_MODEL: gemini-2.0-flash
+        REACT_APP_ENABLE_IMAGE_GENERATION: false
+        REACT_APP_ENABLE_CODE_EXECUTION: false
+        REACT_APP_ENABLE_SEARCH_GROUNDING: false
+      run: npm run build
+      
+    - name: List build output
+      run: ls -la build/
+      
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build
+        # cname: your-custom-domain.com  # Optional: uncomment and replace with your domain 

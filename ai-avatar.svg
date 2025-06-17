@@ -1,0 +1,27 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00BFFF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1E90FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0000FF;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#40E0D0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00CED1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main geometric shape -->
+  <polygon points="20,5 32,15 32,25 20,35 8,25 8,15" fill="url(#grad1)" stroke="#000080" stroke-width="1"/>
+  
+  <!-- Inner geometric details -->
+  <polygon points="20,10 27,16 27,24 20,30 13,24 13,16" fill="url(#grad2)" opacity="0.8"/>
+  
+  <!-- Central highlight -->
+  <polygon points="20,14 24,18 20,22 16,18" fill="#87CEEB" opacity="0.9"/>
+  
+  <!-- Edge highlights -->
+  <line x1="20" y1="5" x2="20" y2="14" stroke="#87CEFA" stroke-width="2"/>
+  <line x1="8" y1="15" x2="13" y2="16" stroke="#87CEFA" stroke-width="1"/>
+  <line x1="32" y1="15" x2="27" y2="16" stroke="#87CEFA" stroke-width="1"/>
+</svg> 

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF.js Extraction Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+    <h1>PDF.js Extraction Test</h1>
+    <input type="file" id="pdfInput" accept=".pdf">
+    <div id="output"></div>
+    
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        document.getElementById('pdfInput').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Processing PDF...</p>';
+            
+            try {
+                console.log('Starting PDF extraction:', file.name);
+                
+                // Convert to ArrayBuffer
+                const arrayBuffer = await file.arrayBuffer();
+                console.log('ArrayBuffer created:', arrayBuffer.byteLength, 'bytes');
+                
+                // Load PDF
+                const loadingTask = pdfjsLib.getDocument({ 
+                    data: arrayBuffer,
+                    useWorkerFetch: false,
+                    disableAutoFetch: false,
+                    disableStream: false
+                });
+                
+                const pdf = await loadingTask.promise;
+                console.log('PDF loaded:', pdf.numPages, 'pages');
+                
+                let extractedText = '';
+                
+                // Extract from first page as test
+                const page = await pdf.getPage(1);
+                const textContent = await page.getTextContent();
+                
+                const pageText = textContent.items
+                    .map(item => item.str || item.text || '')
+                    .filter(text => text.trim().length > 0)
+                    .join(' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                
+                console.log('Page 1 text extracted:', pageText.length, 'characters');
+                
+                output.innerHTML = `
+                    <h2>Success!</h2>
+                    <p><strong>Pages:</strong> ${pdf.numPages}</p>
+                    <p><strong>First page text (${pageText.length} chars):</strong></p>
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0; max-height: 300px; overflow-y: auto;">
+                        ${pageText.substring(0, 1000)}${pageText.length > 1000 ? '...' : ''}
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('PDF extraction failed:', error);
+                output.innerHTML = `
+                    <h2>Error!</h2>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Type:</strong> ${error.name}</p>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        });
+    </script>
+</body>
+</html> 

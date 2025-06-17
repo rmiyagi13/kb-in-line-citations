@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/rate-limiter/static/css/main.fe117517.css",
+    "main.js": "/rate-limiter/static/js/main.aaedfdad.js",
+    "index.html": "/rate-limiter/index.html",
+    "main.fe117517.css.map": "/rate-limiter/static/css/main.fe117517.css.map",
+    "main.aaedfdad.js.map": "/rate-limiter/static/js/main.aaedfdad.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.fe117517.css",
+    "static/js/main.aaedfdad.js"
+  ]
+}
