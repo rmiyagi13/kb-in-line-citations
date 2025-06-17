@@ -94,7 +94,7 @@ function calculateConfidence(relevanceScore: number, contentLength: number): num
 }
 
 /**
- * Parse text and highlight RAG-sourced content
+ * Parse text and highlight RAG-sourced content with improved accuracy
  */
 export function parseTextWithHighlighting(
   text: string,
@@ -109,41 +109,104 @@ export function parseTextWithHighlighting(
   
   let currentIndex = 0;
   
-  // Simple approach: look for quoted content that matches citation sources
-  // For now, implement a basic version that looks for similar text
-  // In a production system, this would use more sophisticated NLP
+  // Enhanced algorithm to find citations in text:
+  // 1. Look for exact matches first
+  // 2. Then look for fuzzy matches using first 40-50 chars
+  // 3. Also check for quoted text as these often represent citations
   
+  // Process each citation
   for (const citation of citations) {
-    const highlightText = citation.highlightedText || citation.content.substring(0, 100);
-    const matchIndex = text.toLowerCase().indexOf(highlightText.toLowerCase().substring(0, 50));
+    // Extract key phrases from citation (up to 3)
+    const keyPhrases = extractKeyPhrases(citation.content, 3);
     
-    if (matchIndex !== -1 && matchIndex >= currentIndex) {
-      // Add non-highlighted text before this match
-      if (matchIndex > currentIndex) {
-        segments.push({
-          text: text.substring(currentIndex, matchIndex),
-          isHighlighted: false
-        });
+    // Try to find matches for each key phrase
+    for (const phrase of keyPhrases) {
+      if (phrase.length < 15) continue; // Skip short phrases
+      
+      const phraseIndex = text.indexOf(phrase);
+      if (phraseIndex !== -1) {
+        // Found a match!
+        if (phraseIndex >= currentIndex) {
+          // Add non-highlighted text before this match
+          if (phraseIndex > currentIndex) {
+            segments.push({
+              text: text.substring(currentIndex, phraseIndex),
+              isHighlighted: false
+            });
+          }
+          
+          // Add highlighted text
+          segments.push({
+            text: phrase,
+            isHighlighted: true,
+            citationId: citation.id
+          });
+          
+          // Add reference
+          references.push({
+            citationId: citation.id,
+            inlineText: phrase,
+            position: phraseIndex,
+            highlightStart: phraseIndex,
+            highlightEnd: phraseIndex + phrase.length
+          });
+          
+          currentIndex = phraseIndex + phrase.length;
+        }
+      }
+    }
+  }
+  
+  // Check for quoted text - often represents citations
+  const quotedTextMatches = text.match(/"([^"]+)"|"([^"]+)"|'([^']+)'/g);
+  if (quotedTextMatches) {
+    for (const quotedText of quotedTextMatches) {
+      // Skip if this text is already part of identified segments
+      const quoteIndex = text.indexOf(quotedText);
+      if (quoteIndex < currentIndex) continue;
+      
+      // Look for best matching citation
+      const innerText = quotedText.replace(/["""'']/g, '');
+      if (innerText.length < 10) continue; // Skip very short quotes
+      
+      let bestMatch: Citation | null = null;
+      let bestScore = 0.4; // Minimum match threshold
+      
+      for (const citation of citations) {
+        const score = calculateSimilarity(innerText, citation.content);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = citation;
+        }
       }
       
-      // Add highlighted text
-      const matchEnd = matchIndex + highlightText.length;
-      segments.push({
-        text: text.substring(matchIndex, Math.min(matchEnd, text.length)),
-        isHighlighted: true,
-        citationId: citation.id
-      });
-      
-      // Add reference
-      references.push({
-        citationId: citation.id,
-        inlineText: text.substring(matchIndex, Math.min(matchEnd, text.length)),
-        position: matchIndex,
-        highlightStart: matchIndex,
-        highlightEnd: Math.min(matchEnd, text.length)
-      });
-      
-      currentIndex = Math.min(matchEnd, text.length);
+      if (bestMatch) {
+        // Add non-highlighted text before this match
+        if (quoteIndex > currentIndex) {
+          segments.push({
+            text: text.substring(currentIndex, quoteIndex),
+            isHighlighted: false
+          });
+        }
+        
+        // Add highlighted text
+        segments.push({
+          text: quotedText,
+          isHighlighted: true,
+          citationId: bestMatch.id
+        });
+        
+        // Add reference
+        references.push({
+          citationId: bestMatch.id,
+          inlineText: quotedText,
+          position: quoteIndex,
+          highlightStart: quoteIndex,
+          highlightEnd: quoteIndex + quotedText.length
+        });
+        
+        currentIndex = quoteIndex + quotedText.length;
+      }
     }
   }
   
@@ -164,6 +227,64 @@ export function parseTextWithHighlighting(
   }
   
   return { segments, references };
+}
+
+/**
+ * Extract key phrases from text
+ */
+function extractKeyPhrases(text: string, maxPhrases: number = 3): string[] {
+  // Split into sentences first
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length >= 15);
+  
+  if (sentences.length === 0) {
+    return [text.substring(0, Math.min(100, text.length))];
+  }
+  
+  // Score sentences by length and position (earlier sentences are more important)
+  const scoredSentences = sentences.map((sentence, index) => ({
+    text: sentence.trim(),
+    score: sentence.length * (1 - index / sentences.length)
+  }));
+  
+  // Sort by score descending
+  scoredSentences.sort((a, b) => b.score - a.score);
+  
+  // Return top N phrases
+  return scoredSentences
+    .slice(0, maxPhrases)
+    .map(s => s.text);
+}
+
+/**
+ * Calculate similarity between two strings
+ * Uses a simple algorithm based on common substrings
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+  
+  // Check for direct containment
+  if (s2.includes(s1)) return 0.9;
+  if (s1.includes(s2)) return 0.9;
+  
+  // Check for common words
+  const words1 = s1.split(/\s+/).filter(w => w.length > 4);
+  const words2 = s2.split(/\s+/).filter(w => w.length > 4);
+  
+  const words1Set = new Set(words1);
+  const words2Set = new Set(words2);
+  
+  // Get intersection size
+  let commonWords = 0;
+  words1.forEach(word => {
+    if (words2Set.has(word)) commonWords++;
+  });
+  
+  // Calculate Jaccard similarity
+  const unionSize = words1Set.size + words2Set.size - commonWords;
+  if (unionSize === 0) return 0;
+  
+  return commonWords / unionSize;
 }
 
 /**

@@ -27,6 +27,7 @@ import { IncantationEngine } from '../services/IncantationEngine';
 import CodeSuggestion from './CodeSuggestion';
 import IncantationButton from './IncantationButton';
 import { AvatarInterface } from './AvatarInterface';
+import InlineCitation from './InlineCitation';
 
 
 // import { contextManager } from '../utils/contextManager'; // TODO: Implement context management
@@ -680,7 +681,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
         
         // After streaming is complete, attach citations if we have them
         if (fullContent.length > 0 && currentCitations.length > 0) {
-          const { segments, references } = parseTextWithHighlighting(fullContent, currentCitations);
+          const { segments, references } = parseTextWithHighlighting(fullContent, currentCitations, ragDiscoveries);
           assistantMessage.citations = currentCitations;
           assistantMessage.citationReferences = references;
           onConversationUpdate();
@@ -703,7 +704,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
           
           // Parse text with highlighting and attach citations
           if (currentCitations.length > 0) {
-            const { segments, references } = parseTextWithHighlighting(response.content, currentCitations);
+            const { segments, references } = parseTextWithHighlighting(response.content, currentCitations, ragDiscoveries);
             assistantMessage.content = response.content;
             assistantMessage.citations = currentCitations;
             assistantMessage.citationReferences = references;
@@ -1196,8 +1197,19 @@ const ConversationView: React.FC<ConversationViewProps> = ({
                     // Enhanced rendering with highlighted citations for assistant messages
                     <div>
                       {(() => {
-                        const { segments } = parseTextWithHighlighting(message.content, message.citations, ragDiscoveries);
-                        return (
+                        const { segments, references } = parseTextWithHighlighting(message.content, message.citations, ragDiscoveries);
+                        
+                        // Use either the existing HighlightedText for hover interactions,
+                        // or the new InlineCitation for in-line citations with numbers
+                        const useInlineCitations = template.features.sourceCitation; // Base on template feature flag
+                        
+                        return useInlineCitations ? (
+                          <InlineCitation 
+                            text={message.content}
+                            citations={message.citations}
+                            references={references}
+                          />
+                        ) : (
                           <HighlightedText 
                             segments={segments}
                             citations={message.citations}
