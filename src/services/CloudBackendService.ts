@@ -72,7 +72,7 @@ export class CloudBackendService {
   constructor(config?: Partial<CloudBackendConfig>) {
     // Default to environment variable or fallback URL
     const defaultBaseUrl = process.env.REACT_APP_BACKEND_URL || 
-                          'https://beta-land-asu-backend-123456789-uc.a.run.app'; // You'll update this
+                          'https://kb-in-line-citations-backend.onrender.com'; // Updated URL for Render deployment
     
     this.config = {
       baseUrl: defaultBaseUrl,

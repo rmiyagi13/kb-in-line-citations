@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: kb-in-line-citations-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4
+    healthCheckPath: /health
+    autoDeploy: true 

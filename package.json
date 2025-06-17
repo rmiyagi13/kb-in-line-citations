@@ -2,7 +2,7 @@
   "name": "beta-land-asu",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://danielennis11111.github.io/rate-limiter",
+  "homepage": "https://rmiyagi13.github.io/kb-in-line-citations",
   "dependencies": {
     "@google/genai": "^1.4.0",
     "@huggingface/transformers": "^3.5.2",
