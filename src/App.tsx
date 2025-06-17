@@ -4,7 +4,7 @@ import ConversationHub from './components/ConversationHub';
 
 function App() {
   return (
-    <Router basename={process.env.NODE_ENV === 'production' ? '/rate-limiter' : ''}>
+    <Router basename={process.env.NODE_ENV === 'production' ? '/kb-in-line-citations' : ''}>
       <div className="App">
         <Routes>
           <Route path="/" element={<ConversationHub />} />
